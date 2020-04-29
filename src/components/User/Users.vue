@@ -70,6 +70,7 @@
                 type="warning"
                 icon="el-icon-share"
                 size="mini"
+                @click="setUserRoleDialog(scope.row)"
               ></el-button>
             </el-tooltip>
           </template>
@@ -145,6 +146,29 @@
         <el-button type="primary" @click="submitEditForm">确 定</el-button>
       </span>
     </el-dialog>
+    <!-- 设置用户角色的对话框 -->
+    <el-dialog title="提示" :visible.sync="setUserRoleVisible" width="50%">
+      <div>
+        <p>当前用户:{{ currentUser.username }}</p>
+        <p>当前角色:{{ currentUser.role_name }}</p>
+        <p>
+          分配角色
+          <el-select v-model="selectedRoleId" placeholder="请选择">
+            <el-option
+              v-for="item in roleList"
+              :key="item.id"
+              :label="item.roleName"
+              :value="item.id"
+            >
+            </el-option>
+          </el-select>
+        </p>
+      </div>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="setUserRoleVisible = false">取 消</el-button>
+        <el-button type="primary" @click="setUserRole">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 
@@ -170,6 +194,12 @@ export default {
     return {
       //用户列表数据
       usersList: [],
+      //角色列表
+      roleList: [],
+      //分配角色时当前的用户
+      currentUser: {},
+      //选中的角色id
+      selectedRoleId: '',
       //分页信息
       queryInfo: {
         query: '',
@@ -181,6 +211,7 @@ export default {
       addDialogVisible: false,
       //编辑用户的提示框
       editDialogVisible: false,
+      setUserRoleVisible: false,
       //添加用户的数据
       addForm: {
         username: '',
@@ -290,9 +321,9 @@ export default {
         )
         if (res.meta.status != 200)
           return this.$message.error('编辑失败，请联系系统管理员')
+        this.getUsersList()
+        this.editDialogVisible = false
       })
-      this.getUsersList()
-      this.editDialogVisible = false
     },
     //根据用户id删除该用户
     async DeleteUserById(id) {
@@ -309,6 +340,33 @@ export default {
       const { data: res } = await this.$axios.delete('users/' + id)
       if (res.meta.status != 200) return this.$message.error('删除异常，请重试')
       this.$message.success('删除成功')
+      this.getUsersList()
+    },
+    //显示分配用户角色的对话框
+    async setUserRoleDialog(row) {
+      this.currentUser = row
+      const { data: res } = await this.$axios.get('roles')
+      if (res.meta.status != 200) {
+        return this.$message.error('获取角色列表失败，请重试')
+      }
+      this.roleList = res.data
+      this.setUserRoleVisible = true
+    },
+    //分配用户角色
+    async setUserRole() {
+      const { data: res } = await this.$axios.put(
+        `users/${this.currentUser.id}/role`,
+        {
+          rid: this.selectedRoleId
+        }
+      )
+      if (res.meta.status != 200) {
+        return this.$message.error('分配用户角色失败，请重试')
+      }
+      this.$message.success('分配用户角色成功')
+      this.roleList = []
+      this.selectedRoleId = ''
+      this.setUserRoleVisible = false
       this.getUsersList()
     }
   },
