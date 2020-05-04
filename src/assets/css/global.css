@@ -23,3 +23,11 @@ body,
 .bdbottom {
   border-bottom: 1px solid #eee;
 }
+
+.el-steps {
+  margin: 20px 0px;
+}
+
+.ql-editor {
+  min-height: 300px !important;
+}
